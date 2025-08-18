@@ -173,7 +173,7 @@ extension GutterView {
     let viewPortBounds = textLayoutManager.textViewportLayoutController.viewportBounds
     textLayoutManager.ensureLayout(for: viewPortBounds)
 
-    let desc = OSFont.systemFont(ofSize: theme.fontSize - 2).fontDescriptor.addingAttributes(
+    let desc = OSFont.systemFont(ofSize: theme.fontSize * 0.9).fontDescriptor.addingAttributes(
       [ OSFontDescriptor.AttributeName.featureSettings:
           [
             [
@@ -231,8 +231,19 @@ extension GutterView {
         let gutterRect = gutterRectForLineNumbersFrom(textRect: 
                                                         textLayoutFragment.layoutFragmentFrameWithoutExtraLineFragment),
            attributes  = selectedLines.contains(line) ? textAttributesSelected : textAttributesDefault
-        if gutterRect.intersects(rect) {
-          ("\(line + 1)" as NSString).draw(in: gutterRect, withAttributes: attributes)
+
+        // Calculate string bounding box for vertical centering
+        let lineNumberString = "\(line + 1)" as NSString
+        let boundingRect = lineNumberString.boundingRect(with: CGSize(width: gutterRect.width, height: .greatestFiniteMagnitude),
+                                                         options: [.usesLineFragmentOrigin],
+                                                         attributes: attributes,
+                                                         context: nil)
+        var centeredRect = gutterRect
+        centeredRect.origin.y += (gutterRect.height - boundingRect.height) / 2
+        centeredRect.size.height = boundingRect.height
+
+        if centeredRect.intersects(rect) {
+          lineNumberString.draw(in: centeredRect, withAttributes: attributes)
         }
       }
 
@@ -245,16 +256,38 @@ extension GutterView {
 
         let gutterRect = gutterRectForLineNumbersFrom(textRect: textRect),
             attributes = selectedLines.contains(lineRange.endIndex - 1) ? textAttributesSelected : textAttributesDefault
-        if gutterRect.intersects(rect) {
-          ("\(lineMap.lines.count)" as NSString).draw(in: gutterRect, withAttributes: attributes)
+
+        // Calculate string bounding box for vertical centering
+        let lineNumberString = "\(lineMap.lines.count)" as NSString
+        let boundingRect = lineNumberString.boundingRect(with: CGSize(width: gutterRect.width, height: .greatestFiniteMagnitude),
+                                                         options: [.usesLineFragmentOrigin],
+                                                         attributes: attributes,
+                                                         context: nil)
+        var centeredRect = gutterRect
+        centeredRect.origin.y += (gutterRect.height - boundingRect.height) / 2
+        centeredRect.size.height = boundingRect.height
+
+        if centeredRect.intersects(rect) {
+          lineNumberString.draw(in: centeredRect, withAttributes: attributes)
         }
 
       } else if textRange.isEmpty {  // Empty document (i.e., there is no layout fragment)
 
         let firstTextRect = CGRect(x: 0, y: 0, width: 0, height: font.lineHeight),
             gutterRect    = gutterRectForLineNumbersFrom(textRect: firstTextRect)
-        if gutterRect.intersects(rect) {
-          ("\(1)" as NSString).draw(in: gutterRect, withAttributes: textAttributesSelected)
+
+        // Calculate string bounding box for vertical centering
+        let lineNumberString = "\(1)" as NSString
+        let boundingRect = lineNumberString.boundingRect(with: CGSize(width: gutterRect.width, height: .greatestFiniteMagnitude),
+                                                         options: [.usesLineFragmentOrigin],
+                                                         attributes: textAttributesSelected,
+                                                         context: nil)
+        var centeredRect = gutterRect
+        centeredRect.origin.y += (gutterRect.height - boundingRect.height) / 2
+        centeredRect.size.height = boundingRect.height
+
+        if centeredRect.intersects(rect) {
+          lineNumberString.draw(in: centeredRect, withAttributes: textAttributesSelected)
         }
       }
     }
