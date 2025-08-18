@@ -603,7 +603,7 @@ extension CodeStorageDelegate {
     var currentLine       = lines.endIndex
     var highlightingRange = range
     var highlightingLines = lines.count
-    trailingLineLoop: while currentLine < lineMap.lines.count {
+    trailingLineLoop: while currentLine < lineMap.lines.count && (currentLine - lines.endIndex) < maxLinesForTrailingTokenisation {
 
       if let lineEntry      = lineMap.lookup(line: currentLine),
          let lineEntryRange = Range<String.Index>(lineEntry.range, in: textStorage.string)

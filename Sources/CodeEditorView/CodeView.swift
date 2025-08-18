@@ -1137,20 +1137,20 @@ extension CodeView {
   ///
   func adjustScrollPositionOfMinimap() {
     guard viewLayout.showMinimap,
-          let minimapTextLayoutManager = minimapView?.textLayoutManager
+          let minimapView,
+          let minimapTextLayoutManager = minimapView.textLayoutManager,
+          let textLayoutManager      = textLayoutManager,
+          let codeStorageDelegate    = optCodeStorage?.delegate as? CodeStorageDelegate
     else { return }
 
-    textLayoutManager?.ensureLayout(for: textLayoutManager!.documentRange)
-    minimapTextLayoutManager.ensureLayout(for: minimapTextLayoutManager.documentRange)
+    // We only ensure layout for the visible viewport of the main code view.
+    textLayoutManager.ensureLayout(for: textLayoutManager.textViewportLayoutController.viewportBounds)
+    minimapTextLayoutManager.ensureLayout(for: minimapTextLayoutManager.textViewportLayoutController.viewportBounds)
 
-    // NB: We don't use `minimapView?.contentSize.height`, because it is too large if the code doesn't fill the whole
-    //     visible portion of the minimap view. Moreover, even for the code view, `contentSize` may not yet have been
-    //     adjusted, whereas we know that the layout is complete (as we ensure that above).
-    guard let codeHeight
-                = optTextLayoutManager?.textLayoutFragmentExtent(for: optTextLayoutManager!.documentRange)?.height,
-          let minimapHeight
-                = minimapTextLayoutManager.textLayoutFragmentExtent(for: minimapTextLayoutManager.documentRange)?.height
-    else { return }
+    // We now need to *estimate* the total height of the document and minimap.
+    let averageLineHeight = font?.lineHeight ?? theme.font.lineHeight,
+        codeHeight        = CGFloat(codeStorageDelegate.lineMap.lines.count) * averageLineHeight,
+        minimapHeight     = codeHeight / minimapRatio
 
     let visibleHeight = documentVisibleRect.size.height
 
@@ -1158,10 +1158,8 @@ extension CodeView {
     // We need to force the scroll view (superclass of `UITextView`) to accomodate the whole content without scrolling
     // and to extent over the whole visible height. (On macOS, the latter is enforced by setting `minSize` in `tile()`.)
     let minimapMinimalHeight = max(minimapHeight, documentVisibleRect.height)
-    if let currentHeight = minimapView?.frame.size.height,
-       minimapMinimalHeight > currentHeight
-    {
-      minimapView?.frame.size.height = minimapMinimalHeight
+    if minimapView.frame.size.height != minimapMinimalHeight {
+      minimapView.frame.size.height = minimapMinimalHeight
     }
 #endif
 
@@ -1173,14 +1171,14 @@ extension CodeView {
     // To get Xcode-like behaviour, where the minimap sticks to the top, it being a floating view is not sufficient.
     let newOriginY = floor(min(max(documentVisibleRect.origin.y * scrollFactor, 0),
                                codeHeight - minimapHeight))
-    if minimapView?.frame.origin.y != newOriginY { minimapView?.frame.origin.y = newOriginY }  // don't update frames in vain
+    if minimapView.frame.origin.y != newOriginY { minimapView.frame.origin.y = newOriginY }  // don't update frames in vain
 
     let heightRatio: CGFloat = if codeHeight <= minimapHeight { 1 } else { minimapHeight / codeHeight }
     let minimapVisibleY      = documentVisibleRect.origin.y * heightRatio,
         minimapVisibleHeight = visibleHeight * heightRatio,
         documentVisibleFrame = CGRect(x: 0,
                                       y: minimapVisibleY,
-                                      width: minimapView?.bounds.size.width ?? 0,
+                                      width: minimapView.bounds.size.width,
                                       height: minimapVisibleHeight).integral
     if documentVisibleBox?.frame != documentVisibleFrame { documentVisibleBox?.frame = documentVisibleFrame }  // don't update frames in vain
   }

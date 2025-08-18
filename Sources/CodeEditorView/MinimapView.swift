@@ -17,12 +17,6 @@
 
 import SwiftUI
 
-
-/// The factor determining how much smaller the minimap is than the actual code view.
-///
-let minimapRatio = CGFloat(8)
-
-
 #if os(iOS) || os(visionOS)
 
 // MARK: -
