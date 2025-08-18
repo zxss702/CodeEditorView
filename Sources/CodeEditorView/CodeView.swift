@@ -1491,47 +1491,47 @@ final class CodeContainer: NSTextContainer {
 // it. The obvious alternative is to wrap it as in the code below. However, this leads to redraw problems on iOS (when
 // repeatedly inserting and again deleting lines).
 //
-//final class CodeViewportLayoutControllerDelegate: NSObject, NSTextViewportLayoutControllerDelegate {
-//
-//  /// When TextKit 2 initialises a text view, it provides a default delegate for the `NSTextViewportLayoutController`.
-//  /// We keep that here when overwriting it with an instance of this very class.
-//  ///
-//  let systemDelegate: any NSTextViewportLayoutControllerDelegate
-//  
-//  /// The code view to which this delegate belongs.
-//  ///
-//  weak var codeView: CodeView?
-//
-//  init(systemDelegate: any NSTextViewportLayoutControllerDelegate, codeView: CodeView) {
-//    self.systemDelegate = systemDelegate
-//    self.codeView       = codeView
-//  }
-//
-//  public func viewportBounds(for textViewportLayoutController: NSTextViewportLayoutController) -> CGRect {
-//    systemDelegate.viewportBounds(for: textViewportLayoutController)
-//  }
-//
-//  public func textViewportLayoutController(_ textViewportLayoutController: NSTextViewportLayoutController,
-//                                           configureRenderingSurfaceFor textLayoutFragment: NSTextLayoutFragment)
-//  {
-//    systemDelegate.textViewportLayoutController(textViewportLayoutController,
-//                                                configureRenderingSurfaceFor: textLayoutFragment)
-//  }
-//
-//  public func textViewportLayoutControllerWillLayout(_ textViewportLayoutController: NSTextViewportLayoutController) {
-//    systemDelegate.textViewportLayoutControllerWillLayout?(textViewportLayoutController)
-//  }
-//
-//  public func textViewportLayoutControllerDidLayout(_ textViewportLayoutController: NSTextViewportLayoutController) {
-//    systemDelegate.textViewportLayoutControllerDidLayout?(textViewportLayoutController)
-//
-//    if let location     = codeView?.selectedRange.location,
-//       let textLocation = codeView?.optTextContentStorage?.textLocation(for: location) {
-//      codeView?.updateCurrentLineHighlight(for: textLocation)
-//    }
-//    codeView?.updateMessageLineHighlights()
-//  }
-//}
+final class CodeViewportLayoutControllerDelegate: NSObject, NSTextViewportLayoutControllerDelegate {
+  
+  let systemDelegate: NSTextViewportLayoutControllerDelegate
+  weak var codeView: CodeView?
+  
+  init(systemDelegate: NSTextViewportLayoutControllerDelegate, codeView: CodeView) {
+    self.systemDelegate = systemDelegate
+    self.codeView = codeView
+  }
+  
+  func viewportBounds(for textViewportLayoutController: NSTextViewportLayoutController) -> CGRect {
+    systemDelegate.viewportBounds(for: textViewportLayoutController)
+  }
+  
+  func textViewportLayoutController(_ textViewportLayoutController: NSTextViewportLayoutController, configureRenderingSurfaceFor textLayoutFragment: NSTextLayoutFragment) {
+    systemDelegate.textViewportLayoutController?(textViewportLayoutController, configureRenderingSurfaceFor: textLayoutFragment)
+    
+    guard let codeView = codeView,
+          let textContentStorage = textViewportLayoutController.textLayoutManager?.textContentManager as? NSTextContentStorage,
+          let codeStorage = codeView.optCodeStorage else { return }
+    
+    // Ensure tokens for the fragment's lines
+    guard let textRange = textLayoutFragment.rangeInElement else { return }
+    if let startLine = codeView.codeStorageDelegate.lineMap.lineOf(index: textRange.location),
+       let endLine = codeView.codeStorageDelegate.lineMap.lineOf(index: textRange.upperBound - 1) ?? startLine {
+      let fragmentLines = startLine...endLine
+      codeView.codeStorageDelegate.ensureTokens(for: fragmentLines, in: codeStorage)
+    }
+    
+    let range = textContentStorage.range(for: textLayoutFragment.rangeInElement)
+    codeStorage.setHighlightingAttributes(for: range, in: textViewportLayoutController.textLayoutManager!)
+  }
+  
+  func textViewportLayoutControllerWillLayout(_ textViewportLayoutController: NSTextViewportLayoutController) {
+    systemDelegate.textViewportLayoutControllerWillLayout?(textViewportLayoutController)
+  }
+  
+  func textViewportLayoutControllerDidLayout(_ textViewportLayoutController: NSTextViewportLayoutController) {
+    systemDelegate.textViewportLayoutControllerDidLayout?(textViewportLayoutController)
+  }
+}
 
 
 // MARK: Selection change management
