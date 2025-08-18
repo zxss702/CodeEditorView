@@ -63,6 +63,7 @@ final class CodeView: UITextView {
   fileprivate var codeViewDelegate:                     CodeViewDelegate?
   fileprivate var codeStorageDelegate:                  CodeStorageDelegate
   fileprivate let minimapTextLayoutManagerDelegate      = MinimapTextLayoutManagerDelegate()
+  fileprivate var minimapViewportLayoutControllerDelegate: CodeViewportLayoutControllerDelegate?
 
   // Subviews
   var gutterView:               GutterView?
@@ -385,6 +386,7 @@ final class CodeView: NSTextView {
   fileprivate var codeStorageDelegate:               CodeStorageDelegate
   fileprivate let minimapTextLayoutManagerDelegate = MinimapTextLayoutManagerDelegate()
   fileprivate let minimapCodeViewDelegate =          CodeViewDelegate()
+  fileprivate var minimapViewportLayoutControllerDelegate: CodeViewportLayoutControllerDelegate?
 
   // Subviews
   var gutterView:               GutterView?

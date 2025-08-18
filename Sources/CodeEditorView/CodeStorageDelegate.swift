@@ -922,3 +922,20 @@ extension CodeStorageDelegate {
     lineMap.setInfoOf(line: line, to: info)
   }
 }
+
+func ensureTokens(for lines: Range<Int>, in codeStorage: CodeStorage) {
+  guard !lines.isEmpty else { return }
+  // Find the first line without tokens
+  var start = lines.lowerBound
+  while start < lines.upperBound {
+    if lineMap.lookup(line: start)?.info?.tokens != nil {
+      start += 1
+    } else {
+      break
+    }
+  }
+  if start < lines.upperBound {
+    let rangeToTokenize = lineMap.charRangeOf(lines: start ..< lines.upperBound)
+    _ = tokenise(range: rangeToTokenize, in: codeStorage)
+  }
+}
