@@ -172,10 +172,12 @@ final class CodeView: UITextView {
     super.init(frame: frame, textContainer: codeContainer)
     codeContainer.textView = self
 
-    textLayoutManager.renderingAttributesValidator = { (textLayoutManager, layoutFragment) in
-      guard let textContentStorage = textLayoutManager.textContentManager as? NSTextContentStorage else { return }
-      codeStorage.setHighlightingAttributes(for: textContentStorage.range(for: layoutFragment.rangeInElement),
-                                            in: textLayoutManager)
+    textLayoutManager.renderingAttributesValidator = nil
+
+    if let systemDelegate = textLayoutManager.textViewportLayoutController.delegate {
+      let codeViewportLayoutControllerDelegate = CodeViewportLayoutControllerDelegate(systemDelegate: systemDelegate, codeView: self)
+      self.codeViewportLayoutControllerDelegate = codeViewportLayoutControllerDelegate
+      textLayoutManager.textViewportLayoutController.delegate = codeViewportLayoutControllerDelegate
     }
 
     // We can't do this — see [Note NSTextViewportLayoutControllerDelegate].
