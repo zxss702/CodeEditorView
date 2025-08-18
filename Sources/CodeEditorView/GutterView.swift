@@ -173,7 +173,7 @@ extension GutterView {
     let viewPortBounds = textLayoutManager.textViewportLayoutController.viewportBounds
     textLayoutManager.ensureLayout(for: viewPortBounds)
 
-    let desc = OSFont.systemFont(ofSize: theme.fontSize).fontDescriptor.addingAttributes(
+    let desc = OSFont.systemFont(ofSize: theme.fontSize - 2).fontDescriptor.addingAttributes(
       [ OSFontDescriptor.AttributeName.featureSettings:
           [
             [
